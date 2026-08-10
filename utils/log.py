@@ -32,6 +32,9 @@ LogLevel = Literal["INFO", "SUCCESS", "WARNING", "ERROR", "DEBUG", "CRITICAL"]
 @unique
 class Tags(StrEnum):
     MAIN = "MAIN"
+    CLIENT = "CLIENT"
+    PARSER = "PARSER"
+    LOGIN = "LOGIN"
 
 
 def log(level: LogLevel, tag: Tags | str, message: str) -> None:
