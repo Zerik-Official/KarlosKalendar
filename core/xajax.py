@@ -8,30 +8,14 @@ as form-encoded fields (xjxfun, xjxr, xjxargs[]) and responses are JSON.
 # Standard library
 import json
 import time
-from dataclasses import dataclass
 from typing import Any, Dict, Final, List
+
+# Project imports
+from schemas.schemas import XajaxCommand
 
 
 # xajax functions used by the Campus portal.
 LOGIN_REVISA_DOC: Final[str] = "f17_Login_RevisaDoc"
-
-
-@dataclass(frozen=True)
-class XajaxCommand:
-    """
-    A single command of an xajax JSON response.
-
-    Attributes:
-        cmd (str): Command type (as, js, etc).
-        command_id (str): Id of the target element.
-        prop (str): Property being assigned.
-        data (str): Payload of the command.
-    """
-
-    cmd: str
-    command_id: str
-    prop: str
-    data: str
 
 
 def build_request_body(
@@ -72,7 +56,7 @@ def parse_response(text: str) -> List[XajaxCommand]:
     try:
         payload: dict = json.loads(text)
     except json.JSONDecodeError as exc:
-        raise ValueError("La respuesta xajax no es un JSON valido.") from exc
+        raise ValueError("The xajax response is not valid JSON.") from exc
 
     commands: List[XajaxCommand] = []
     for item in payload.get("xjxobj", []):
