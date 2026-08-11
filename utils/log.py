@@ -38,6 +38,8 @@ class Tags(StrEnum):
     CLIENT = "CLIENT"
     PARSER = "PARSER"
     LOGIN = "LOGIN"
+    SCRAPER = "SCRAPER"
+    CONFIG = "CONFIG"
 
 
 def log(level: LogLevel, tag: Tags | str, message: str) -> None:
