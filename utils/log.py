@@ -1,33 +1,36 @@
 """
-Logger personalizado con soporte para etiquetas (tags) y niveles de log.
-Permite filtrar por etiquetas y niveles, y es seguro para uso en múltiples hilos.
+Custom logger with support for tags and log levels.
+
+Allows filtering by tags and levels, and is safe for use across
+multiple threads.
 """
 
 # Standard library
 import threading
 from enum import StrEnum, unique
-from typing import Literal, Final, Set, Dict
+from typing import Final, Set, Dict
 from datetime import datetime
 
 # Third-party
 from colorama import Fore, Style
 
+# Project imports
+from schemas.schemas import LogLevel
 
-# Lock global para logger, evitará los problemas de concurrencia.
-_log_lock = threading.Lock()
 
-# Si tiene tags, solo muestra esos tags. Vacío = muestra todos.
+# Global lock for the logger to avoid concurrency issues.
+_log_lock: threading.Lock = threading.Lock()
+
+# If not empty, only these tags are shown. Empty = show all.
 ENABLED_TAGS: Final[Set[str]] = set()
 
-# Niveles ignorados globalmente para todos los tags.
+# Levels ignored globally for all tags.
 DISABLED_LEVELS: Final[Set[str]] = set()
 
-# Reglas por tag: define qué niveles IGNORAR para un tag específico.
-# Ejemplo: "LOADER": {"DEBUG"} -> silencia DEBUG solo del LOADER
-TAG_LEVEL_RULES: Dict[str, Set[str]] = {
-}
+# Per-tag rules: levels to IGNORE for a specific tag.
+# Example: "LOADER": {"DEBUG"} -> silences DEBUG only for LOADER
+TAG_LEVEL_RULES: Dict[str, Set[str]] = {}
 
-LogLevel = Literal["INFO", "SUCCESS", "WARNING", "ERROR", "DEBUG", "CRITICAL"]
 
 @unique
 class Tags(StrEnum):
@@ -39,12 +42,13 @@ class Tags(StrEnum):
 
 def log(level: LogLevel, tag: Tags | str, message: str) -> None:
     """
-    Imprime un mensaje de log con filtros por etiqueta y nivel.
+    Print a log message with filtering by tag and level.
 
     Args:
-        level (str): Nivel del log (INFO, SUCCESS, WARNING, ERROR, DEBUG, CRITICAL).
-        tag (str): Etiqueta del módulo (ej: MAIN, CORE, Navegador).
-        message (str): Mensaje a imprimir en consola.
+        level (str): Log level (INFO, SUCCESS, WARNING, ERROR, DEBUG, CRITICAL).
+        tag (str): Module tag (e.g. MAIN, CORE, Browser).
+        message (str): Message to print to the console.
+
     Returns:
         None
     """
