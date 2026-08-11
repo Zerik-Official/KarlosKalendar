@@ -23,3 +23,6 @@ DEFAULT_HEADERS: Final[dict] = {
     ),
     "Accept-Language": "es-CO,es;q=0.9,en;q=0.8",
 }
+
+# Document type used for the portal login.
+DOCUMENT_TYPE: Final[str] = "CC"
