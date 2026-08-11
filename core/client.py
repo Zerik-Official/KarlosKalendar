@@ -1,8 +1,8 @@
 """
-Cliente HTTP para el Campus Virtual UNAD.
+HTTP client for the UNAD Campus portal.
 
-Maneja la sesión persistente (requests.Session), el flujo de login
-via xajax y la navegación autenticada por las páginas del portal.
+Manages the persistent session (requests.Session), the xajax login
+flow and the authenticated navigation through the portal pages.
 """
 
 # Standard library
@@ -60,13 +60,13 @@ class CampusClient:
             BASE_URL, timeout=REQUEST_TIMEOUT
         )
         self._landing_html = response.text
-        log("INFO", Tags.CLIENT, f"Primera peticion, status: {response.status_code}")
+        log("INFO", Tags.CLIENT, f"First request, status: {response.status_code}")
 
         self.ssid = self.session.cookies.get(SSID_COOKIE)
         if self.ssid is not None:
-            log("SUCCESS", Tags.CLIENT, f"Session establecida, SSID: {self.ssid}")
+            log("SUCCESS", Tags.CLIENT, f"Session established, SSID: {self.ssid}")
         else:
-            log("ERROR", Tags.CLIENT, "El servidor no devolvio la cookie de sesion.")
+            log("ERROR", Tags.CLIENT, "The server did not return the session cookie.")
 
         return self.ssid
 
@@ -101,16 +101,16 @@ class CampusClient:
         try:
             commands: list[XajaxCommand] = parse_response(response.text)
         except ValueError as exc:
-            log("ERROR", Tags.LOGIN, f"La respuesta de login no fue JSON: {exc}")
+            log("ERROR", Tags.LOGIN, f"The login response was not JSON: {exc}")
             return None
 
         user_id_value: str | None = get_assign_value(commands, "id11")
         if user_id_value is None:
-            log("ERROR", Tags.LOGIN, "El login no devolvio el id de usuario.")
+            log("ERROR", Tags.LOGIN, "The login did not return the user id.")
             return None
 
         self.user_id = int(user_id_value)
-        log("SUCCESS", Tags.LOGIN, f"Login exitoso, user_id: {self.user_id}")
+        log("SUCCESS", Tags.LOGIN, f"Login successful, user_id: {self.user_id}")
         return self.user_id
 
     def fetch_profile_page(self) -> str:
@@ -126,7 +126,7 @@ class CampusClient:
         log(
             "INFO",
             Tags.CLIENT,
-            f"Perfil obtenido, status: {response.status_code}, bytes: {len(response.text)}",
+            f"Profile fetched, status: {response.status_code}, bytes: {len(response.text)}",
         )
         return response.text
 
