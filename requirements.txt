@@ -1,0 +1,6 @@
+requests
+colorama
+python-dotenv
+beautifulsoup4
+rich
+inquirerpy
