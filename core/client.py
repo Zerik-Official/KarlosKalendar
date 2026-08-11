@@ -7,6 +7,7 @@ flow and the authenticated navigation through the portal pages.
 
 # Standard library
 import base64
+import os
 
 # Third-party
 import requests
@@ -23,6 +24,7 @@ from core.xajax import (
 from utils.constants import (
     BASE_URL,
     DEFAULT_HEADERS,
+    DOCUMENT_TYPE,
     PROFILE_PATH,
     REQUEST_TIMEOUT,
     SSID_COOKIE,
@@ -167,3 +169,20 @@ class CampusClient:
             if next_saltos is None or not next_saltos.get("value"):
                 return
             saltos = int(str(next_saltos["value"]))
+
+
+def create_authenticated_client() -> CampusClient:
+    """
+    Create a CampusClient and authenticate it with the stored credentials.
+
+    Returns:
+        CampusClient: Authenticated client.
+    """
+    client: CampusClient = CampusClient()
+    client.establish_session()
+
+    document_id: str = os.getenv("CC", "")
+    password: str = os.getenv("PASSWORD", "")
+
+    client.login(DOCUMENT_TYPE, document_id, password)
+    return client
