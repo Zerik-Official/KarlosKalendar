@@ -8,15 +8,16 @@ from dotenv import load_dotenv
 
 # Project imports
 from core.client import CampusClient
-from core.parser import UserProfile, parse_user_profile
+from core.parser import parse_user_profile
+from schemas.schemas import UserProfile
 from utils.log import log, Tags
 
 init(autoreset=True)
 
-# Cargar las credenciales del archivo .env.
+# Load the credentials from the .env file.
 load_dotenv()
 
-# Tipo de documento usado en el login del portal.
+# Document type used for the portal login.
 DOCUMENT_TYPE: Final[str] = "CC"
 
 
@@ -31,7 +32,7 @@ def main() -> None:
     Returns:
         None
     """
-    log("INFO", Tags.MAIN, "Iniciando KarlosKalendar...")
+    log("INFO", Tags.MAIN, "Starting KarlosKalendar...")
 
     client: CampusClient = CampusClient()
     client.establish_session()
@@ -39,13 +40,13 @@ def main() -> None:
     document_id: str = os.getenv("CC", "")
     password: str = os.getenv("PASSWORD", "")
 
-    log("INFO", Tags.MAIN, "Autenticando en el Campus Virtual...")
+    log("INFO", Tags.MAIN, "Authenticating on the Campus Virtual...")
     client.login(DOCUMENT_TYPE, document_id, password)
 
     html: str = client.fetch_profile_page()
     profile: UserProfile = parse_user_profile(html)
 
-    log("SUCCESS", Tags.MAIN, f"Perfil de {profile.full_name} (id {profile.user_id})")
+    log("SUCCESS", Tags.MAIN, f"Profile of {profile.full_name} (id {profile.user_id})")
     log("INFO", Tags.MAIN, _build_table(_profile_rows(profile)))
 
 
