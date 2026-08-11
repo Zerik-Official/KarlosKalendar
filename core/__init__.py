@@ -1,5 +1,5 @@
 """
-Paquete core: lógica principal de KarlosKalendar.
+Core package: main logic of KarlosKalendar.
 
-Contiene el cliente HTTP contra el Campus Virtual UNAD.
+Contains the HTTP client against the UNAD Campus portal.
 """
