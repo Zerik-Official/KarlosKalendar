@@ -15,6 +15,7 @@ from utils.config import load_config
 from utils.config_menu import run_config_menu
 from utils.display import print_profile
 from utils.log import log, Tags
+from utils.banner import BANNER
 
 init(autoreset=True)
 
@@ -117,4 +118,5 @@ def _scrape_all(client: CampusClient, config: AppConfig) -> None:
 
 
 if __name__ == "__main__":
+    print(BANNER)
     main()
