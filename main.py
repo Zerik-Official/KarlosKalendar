@@ -1,15 +1,19 @@
 # Standard library
-import os
-from typing import Final, List, Tuple
+import argparse
+import time
 
 # Third-party
 from colorama import init
 from dotenv import load_dotenv
 
 # Project imports
-from core.client import CampusClient
+from core.client import CampusClient, create_authenticated_client
 from core.parser import parse_user_profile
-from schemas.schemas import UserProfile
+from core.scraper import scrape_and_update
+from schemas.schemas import AppConfig, UserProfile
+from utils.config import load_config
+from utils.config_menu import run_config_menu
+from utils.display import print_profile
 from utils.log import log, Tags
 
 init(autoreset=True)
@@ -17,106 +21,99 @@ init(autoreset=True)
 # Load the credentials from the .env file.
 load_dotenv()
 
-# Document type used for the portal login.
-DOCUMENT_TYPE: Final[str] = "CC"
-
 
 def main() -> None:
     """
     Entry point of the application.
 
-    Establishes the session with the Campus Virtual endpoint, authenticates
-    the user with the stored credentials, extracts the user profile from
-    the profile page and displays it as a table.
+    Without arguments it authenticates and runs the scrape scheduler.
+    With --config it opens the interactive configuration menu.
 
     Returns:
         None
     """
+    parser: argparse.ArgumentParser = argparse.ArgumentParser(
+        description="KarlosKalendar CLI"
+    )
+    parser.add_argument(
+        "--config",
+        action="store_true",
+        help="Open the interactive configuration menu",
+    )
+    args: argparse.Namespace = parser.parse_args()
+
+    if args.config:
+        run_config_menu()
+        return
+
+    run_scheduler()
+
+
+def run_scheduler() -> None:
+    """
+    Run the periodic scraping loop.
+
+    Scrapes all registered calendars, compares them with the stored
+    JSON files and updates them when the data changed. Repeats every
+    configured interval.
+
+    Returns:
+        None
+    """
+    config: AppConfig = load_config()
+    if not config.calendars:
+        log(
+            "WARNING",
+            Tags.MAIN,
+            "No calendars registered, run with --config to add one",
+        )
+        return
+
     log("INFO", Tags.MAIN, "Starting KarlosKalendar...")
 
-    client: CampusClient = CampusClient()
-    client.establish_session()
-
-    document_id: str = os.getenv("CC", "")
-    password: str = os.getenv("PASSWORD", "")
-
-    log("INFO", Tags.MAIN, "Authenticating on the Campus Virtual...")
-    client.login(DOCUMENT_TYPE, document_id, password)
+    client: CampusClient = create_authenticated_client()
+    if client.user_id is None:
+        log("ERROR", Tags.MAIN, "Authentication failed, check the .env credentials")
+        return
 
     html: str = client.fetch_profile_page()
     profile: UserProfile = parse_user_profile(html)
+    log(
+        "SUCCESS",
+        Tags.MAIN,
+        f"Profile of {profile.full_name} (id {profile.user_id})",
+    )
+    print_profile(profile)
 
-    log("SUCCESS", Tags.MAIN, f"Profile of {profile.full_name} (id {profile.user_id})")
-    log("INFO", Tags.MAIN, _build_table(_profile_rows(profile)))
+    interval_seconds: int = config.interval_minutes * 60
+    log(
+        "INFO",
+        Tags.MAIN,
+        f"Scraping {len(config.calendars)} calendar(s) every "
+        f"{config.interval_minutes} minute(s)",
+    )
+
+    try:
+        while True:
+            _scrape_all(client, config)
+            time.sleep(interval_seconds)
+    except KeyboardInterrupt:
+        log("INFO", Tags.MAIN, "Stopped by user")
 
 
-def _profile_rows(profile: UserProfile) -> List[Tuple[str, str]]:
+def _scrape_all(client: CampusClient, config: AppConfig) -> None:
     """
-    Map a UserProfile into label/value rows for the table.
+    Scrape all registered calendars and update the stored data if changed.
 
     Args:
-        profile (UserProfile): Parsed profile data.
+        client (CampusClient): Authenticated client.
+        config (AppConfig): Current configuration.
 
     Returns:
-        list: Pairs of (label, value).
+        None
     """
-    return [
-        ("ID usuario", str(profile.user_id)),
-        ("Tipo documento", profile.document_type),
-        ("Documento", profile.document),
-        ("Nombre completo", profile.full_name),
-        ("Nombres y apellidos", _combine_names(profile)),
-        ("Correo institucional", profile.institutional_email),
-        ("Correo notificaciones", profile.notification_email),
-        ("Correo personal", profile.personal_email),
-        ("Telefono", profile.phone),
-        ("Fecha nacimiento", profile.birth_date),
-        ("Estado civil", profile.marital_status),
-        ("RH", profile.blood_type),
-        ("Zona", profile.zone),
-        ("Estrato", profile.stratum),
-        ("Direccion", profile.address),
-    ]
-
-
-def _combine_names(profile: UserProfile) -> str:
-    """
-    Join the first/second names and surnames of a profile into one string.
-
-    Args:
-        profile (UserProfile): Parsed profile data.
-
-    Returns:
-        str: The combined name, or an empty string if no part is present.
-    """
-    parts: List[str] = [
-        profile.first_name,
-        profile.second_name,
-        profile.first_surname,
-        profile.second_surname,
-    ]
-    return " ".join(part for part in parts if part)
-
-
-def _build_table(rows: List[Tuple[str, str]]) -> str:
-    """
-    Render a list of label/value pairs as an ASCII table.
-
-    Args:
-        rows (list): Pairs of (label, value).
-
-    Returns:
-        str: The table as a single multi-line string.
-    """
-    label_width: int = max(len(label) for label, _ in rows)
-    value_width: int = max(len(value) for _, value in rows)
-    border: str = f"+{'-' * (label_width + 2)}+{'-' * (value_width + 2)}+"
-    header: str = f"| {'Campo'.ljust(label_width)} | {'Valor'.ljust(value_width)} |"
-    body: List[str] = [border, header, border]
-    for label, value in rows:
-        body.append(f"| {label.ljust(label_width)} | {value.ljust(value_width)} |")
-        body.append(border)
-    return "\n".join(body)
+    for url in config.calendars:
+        scrape_and_update(client, url)
 
 
 if __name__ == "__main__":
