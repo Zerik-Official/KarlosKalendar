@@ -1,21 +1,21 @@
 from typing_extensions import Final
 
-# Endpoint que usa el HTML para las credenciales (requestURI de xajax).
+# Endpoint used by the HTML for the credentials (xajax requestURI).
 BASE_URL: Final[str] = "https://campus0a.unad.edu.co/campus/"
 
-# Página de perfil autenticada.
+# Authenticated profile page.
 PROFILE_PATH: Final[str] = "perfilusuario.php"
 
-# Nombre de la cookie que contiene el id de sesión del servidor.
+# Name of the cookie that holds the server session id.
 SSID_COOKIE: Final[str] = "PHPSESSID"
 
-# Nombre de la cookie que guarda el id del usuario autenticado.
+# Name of the cookie that stores the authenticated user id.
 USER_ID_COOKIE: Final[str] = "idUsuario"
 
-# Timeout en segundos para las peticiones HTTP.
+# Timeout in seconds for HTTP requests.
 REQUEST_TIMEOUT: Final[int] = 30
 
-# Cabeceras por defecto para simular un navegador.
+# Default headers to simulate a browser.
 DEFAULT_HEADERS: Final[dict] = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
